@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>岩板信息查询工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        h1 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .header-actions {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+        }
+        
+        .action-button {
+            background-color: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        .search-container {
+            margin: 20px 0;
+            position: relative;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 12px 40px 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            font-size: 16px;
+            background-color: white;
+        }
+        
+        .search-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+        
+        .category-tabs {
+            display: flex;
+            overflow-x: auto;
+            margin: 20px 0;
+            padding-bottom: 10px;
+        }
+        
+        .category-tab {
+            flex: 0 0 auto;
+            padding: 8px 16px;
+            margin-right: 10px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .category-tab.active {
+            background-color: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+        
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .product-card {
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            position: relative;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .product-image {
+            width: 100%;
+            height: 150px;
+            background-color: #f0f0f0;
+            position: relative;
+        }
+        
+        .product-info {
+            padding: 12px;
+        }
+        
+        .product-name {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .product-code {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .product-price {
+            font-size: 16px;
+            font-weight: 700;
+            color: #e74c3c;
+        }
+        
+        .card-actions {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            display: none;
+        }
+        
+        .product-card:hover .card-actions {
+            display: flex;
+        }
+        
+        .card-action-button {
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ddd;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            z-index: 200;
+        }
+        
+        .modal-content {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .modal-image {
+            flex: 1;
+            background-color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-details {
+            background-color: white;
+            padding: 20px;
+            max-height: 30%;
+            overflow-y: auto;
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+            z-index: 10;
+        }
+        
+        .form-modal {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            max-width: 90%;
+            max-height: 90%;
+            overflow-y: auto;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .form-modal h2 {
+            margin-bottom: 20px;
+            font-size: 18px;
+            text-align: center;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background-color: #95a5a6;
+            color: white;
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .product-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .product-image {
+                height: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>岩板信息查询工具</h1>
+        <div class="header-actions">
+            <button class="action-button" onclick="openAddForm()">+ 添加</button>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="search-container">
+            <input type="text" class="search-input" placeholder="搜索岩板型号或名称..." id="searchInput">
+            <span class="search-icon">🔍</span>
+        </div>
+        
+        <div class="category-tabs">
+            <div class="category-tab active" data-category="all">全部</div>
+            <div class="category-tab" data-category="marble">大理石</div>
+            <div class="category-tab" data-category="granite">花岗岩</div>
+            <div class="category-tab" data-category="quartz">石英石</div>
+            <div class="category-tab" data-category="porcelain">陶瓷</div>
+        </div>
+        
+        <div class="product-grid" id="productGrid">
+            <!-- 产品卡片将通过JavaScript动态生成 -->
+        </div>
+    </div>
+    
+    <div class="modal" id="productModal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <div class="modal-image" id="modalImage"></div>
+            <div class="modal-details" id="modalDetails"></div>
+        </div>
+    </div>
+    
+    <div class="modal" id="formModal">
+        <div class="form-modal">
+            <span class="close-modal" onclick="closeFormModal()">&times;</span>
+            <h2 id="formTitle">添加岩板</h2>
+            <form id="slabForm">
+                <input type="hidden" id="slabId">
+                <div class="form-group">
+                    <label for="slabName">名称</label>
+                    <input type="text" id="slabName" required>
+                </div>
+                <div class="form-group">
+                    <label for="slabCode">型号</label>
+                    <input type="text" id="slabCode" required>
+                </div>
+                <div class="form-group">
+                    <label for="slabCategory">类别</label>
+                    <select id="slabCategory" required>
+                        <option value="marble">大理石</option>
+                        <option value="granite">花岗岩</option>
+                        <option value="quartz">石英石</option>
+                        <option value="porcelain">陶瓷</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="slabPrice">价格</label>
+                    <input type="text" id="slabPrice" required>
+                </div>
+                <div class="form-group">
+                    <label for="slabDescription">描述</label>
+                    <textarea id="slabDescription" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="slabImage">图片URL</label>
+                    <input type="url" id="slabImage" required>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeFormModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // 从localStorage加载岩板数据
+        let slabs = JSON.parse(localStorage.getItem('slabs')) || [
+            {
+                id: 1,
+                name: "卡拉拉白",
+                code: "SL-001",
+                category: "marble",
+                price: "¥298/m²",
+                description: "经典白色大理石纹理，质地细腻，适合各种装修风格",
+                image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=white%20marble%20texture%20slab%20clean%20modern&image_size=square"
+            },
+            {
+                id: 2,
+                name: "爵士白",
+                code: "SL-002",
+                category: "marble",
+                price: "¥328/m²",
+                description: "优雅的白色底色，带有灰色纹理，高端大气",
+                image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=jazz%20white%20marble%20slab%20elegant&image_size=square"
+            },
+            {
+                id: 3,
+                name: "印度红",
+                code: "SL-003",
+                category: "granite",
+                price: "¥398/m²",
+                description: "鲜艳的红色花岗岩，纹理清晰，适合重点装饰",
+                image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=indian%20red%20granite%20slab%20natural&image_size=square"
+            },
+            {
+                id: 4,
+                name: "黑金沙",
+                code: "SL-004",
+                category: "granite",
+                price: "¥428/m²",
+                description: "黑色花岗岩，带有金色斑点，奢华感十足",
+                image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=black%20granite%20with%20gold%20specks%20slab&image_size=square"
+            },
+            {
+                id: 5,
+                name: "雪花白",
+                code: "SL-005",
+                category: "quartz",
+                price: "¥268/m²",
+                description: "白色石英石，带有雪花状纹理，耐脏耐磨",
+                image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=snow%20white%20quartz%20slab%20modern&image_size=square"
+            },
+            {
+                id: 6,
+                name: "咖啡棕",
+                code: "SL-006",
+                category: "quartz",
+                price: "¥288/m²",
+                description: "温暖的棕色石英石，纹理自然，适合现代风格",
+                image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=coffee%20brown%20quartz%20slab%20warm&image_size=square"
+            },
+            {
+                id: 7,
+                name: "米白色",
+                code: "SL-007",
+                category: "porcelain",
+                price: "¥198/m²",
+                description: "米白色陶瓷岩板，质地坚硬，性价比高",
+                image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=beige%20porcelain%20slab%20smooth&image_size=square"
+            },
+            {
+                id: 8,
+                name: "深灰色",
+                code: "SL-008",
+                category: "porcelain",
+                price: "¥218/m²",
+                description: "深灰色陶瓷岩板，现代简约风格，易于搭配",
+                image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=dark%20gray%20porcelain%20slab%20modern&image_size=square"
+            }
+        ];
+        
+        // 保存数据到localStorage
+        function saveSlabs() {
+            localStorage.setItem('slabs', JSON.stringify(slabs));
+        }
+        
+        let filteredSlabs = [...slabs];
+        
+        // 渲染产品卡片
+        function renderProducts() {
+            const productGrid = document.getElementById('productGrid');
+            productGrid.innerHTML = '';
+            
+            if (filteredSlabs.length === 0) {
+                productGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #999;">没有找到相关岩板</div>';
+                return;
+            }
+            
+            filteredSlabs.forEach(slab => {
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.onclick = () => openModal(slab);
+                
+                card.innerHTML = `
+                    <div class="card-actions">
+                        <button class="card-action-button" onclick="event.stopPropagation(); editSlab(${slab.id})">✏️</button>
+                        <button class="card-action-button" onclick="event.stopPropagation(); deleteSlab(${slab.id})">🗑️</button>
+                    </div>
+                    <div class="product-image">
+                        <img src="${slab.image}" alt="${slab.name}" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    <div class="product-info">
+                        <div class="product-name">${slab.name}</div>
+                        <div class="product-code">${slab.code}</div>
+                        <div class="product-price">${slab.price}</div>
+                    </div>
+                `;
+                
+                productGrid.appendChild(card);
+            });
+        }
+        
+        // 打开产品详情模态框
+        function openModal(slab) {
+            const modal = document.getElementById('productModal');
+            const modalImage = document.getElementById('modalImage');
+            const modalDetails = document.getElementById('modalDetails');
+            
+            modalImage.innerHTML = `<img src="${slab.image}" alt="${slab.name}" style="max-width: 100%; max-height: 100%; object-fit: contain;">`;
+            modalDetails.innerHTML = `
+                <h3 style="margin-bottom: 10px;">${slab.name}</h3>
+                <p style="margin-bottom: 5px;"><strong>型号:</strong> ${slab.code}</p>
+                <p style="margin-bottom: 5px;"><strong>类别:</strong> ${getCategoryName(slab.category)}</p>
+                <p style="margin-bottom: 10px;"><strong>价格:</strong> ${slab.price}</p>
+                <p style="margin-bottom: 0;"><strong>描述:</strong> ${slab.description}</p>
+            `;
+            
+            modal.style.display = 'block';
+        }
+        
+        // 关闭模态框
+        function closeModal() {
+            document.getElementById('productModal').style.display = 'none';
+        }
+        
+        // 打开添加表单
+        function openAddForm() {
+            document.getElementById('formTitle').textContent = '添加岩板';
+            document.getElementById('slabId').value = '';
+            document.getElementById('slabName').value = '';
+            document.getElementById('slabCode').value = '';
+            document.getElementById('slabCategory').value = 'marble';
+            document.getElementById('slabPrice').value = '';
+            document.getElementById('slabDescription').value = '';
+            document.getElementById('slabImage').value = '';
+            document.getElementById('formModal').style.display = 'block';
+        }
+        
+        // 编辑岩板
+        function editSlab(id) {
+            const slab = slabs.find(s => s.id === id);
+            if (slab) {
+                document.getElementById('formTitle').textContent = '编辑岩板';
+                document.getElementById('slabId').value = slab.id;
+                document.getElementById('slabName').value = slab.name;
+                document.getElementById('slabCode').value = slab.code;
+                document.getElementById('slabCategory').value = slab.category;
+                document.getElementById('slabPrice').value = slab.price;
+                document.getElementById('slabDescription').value = slab.description;
+                document.getElementById('slabImage').value = slab.image;
+                document.getElementById('formModal').style.display = 'block';
+            }
+        }
+        
+        // 删除岩板
+        function deleteSlab(id) {
+            if (confirm('确定要删除这个岩板吗？')) {
+                slabs = slabs.filter(s => s.id !== id);
+                saveSlabs();
+                filterSlabs();
+            }
+        }
+        
+        // 关闭表单模态框
+        function closeFormModal() {
+            document.getElementById('formModal').style.display = 'none';
+        }
+        
+        // 处理表单提交
+        document.getElementById('slabForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const id = parseInt(document.getElementById('slabId').value);
+            const name = document.getElementById('slabName').value;
+            const code = document.getElementById('slabCode').value;
+            const category = document.getElementById('slabCategory').value;
+            const price = document.getElementById('slabPrice').value;
+            const description = document.getElementById('slabDescription').value;
+            const image = document.getElementById('slabImage').value;
+            
+            if (id) {
+                // 编辑现有岩板
+                const index = slabs.findIndex(s => s.id === id);
+                if (index !== -1) {
+                    slabs[index] = {
+                        id,
+                        name,
+                        code,
+                        category,
+                        price,
+                        description,
+                        image
+                    };
+                }
+            } else {
+                // 添加新岩板
+                const newId = Math.max(...slabs.map(s => s.id), 0) + 1;
+                slabs.push({
+                    id: newId,
+                    name,
+                    code,
+                    category,
+                    price,
+                    description,
+                    image
+                });
+            }
+            
+            saveSlabs();
+            filterSlabs();
+            closeFormModal();
+        });
+        
+        // 获取类别名称
+        function getCategoryName(category) {
+            const categories = {
+                'marble': '大理石',
+                'granite': '花岗岩',
+                'quartz': '石英石',
+                'porcelain': '陶瓷'
+            };
+            return categories[category] || category;
+        }
+        
+        // 过滤岩板
+        function filterSlabs() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const activeCategory = document.querySelector('.category-tab.active').dataset.category;
+            
+            filteredSlabs = slabs.filter(slab => {
+                const matchesSearch = slab.name.toLowerCase().includes(searchTerm) || 
+                                     slab.code.toLowerCase().includes(searchTerm);
+                const matchesCategory = activeCategory === 'all' || slab.category === activeCategory;
+                return matchesSearch && matchesCategory;
+            });
+            
+            renderProducts();
+        }
+        
+        // 搜索功能
+        document.getElementById('searchInput').addEventListener('input', filterSlabs);
+        
+        // 分类切换
+        document.querySelectorAll('.category-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                // 移除所有活跃状态
+                document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+                // 添加当前活跃状态
+                this.classList.add('active');
+                
+                filterSlabs();
+            });
+        });
+        
+        // 点击模态框外部关闭
+        window.onclick = function(event) {
+            const productModal = document.getElementById('productModal');
+            const formModal = document.getElementById('formModal');
+            
+            if (event.target === productModal) {
+                productModal.style.display = 'none';
+            }
+            
+            if (event.target === formModal) {
+                formModal.style.display = 'none';
+            }
+        };
+        
+        // 初始化渲染
+        renderProducts();
+    </script>
+</body>
+</html>
